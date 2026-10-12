@@ -1,6 +1,6 @@
 # Health Monitor — JavaScript version
 
-This folder contains the complete JavaScript version of the Health Monitor: the frontend, Node.js API server, and local JSON persistence. It does not depend on the C server or the rest of the repository to serve the UI.
+This repository contains the complete JavaScript version of the Health Monitor: the frontend, Node.js API server, and local JSON persistence. It is independent of the original C server and frontend repository.
 
 ## Run
 
@@ -50,9 +50,9 @@ remains available for development and continues to use `data/store.json`.
 
 1. Create a Neon Postgres database, or add Neon through the Vercel Marketplace.
 2. Run [`api/schema.sql`](api/schema.sql) once in the database's SQL editor.
-3. In Vercel, import this repository and set the project root to
-   `javascript_version`. Choose the **Other** framework preset and `public` as
-   the output directory; there is no frontend build step.
+3. In Vercel, import this repository with the repository root as the project
+   root. Choose the **Other** framework preset. `vercel.json` configures
+   `public/` as the output directory; there is no frontend build step.
 4. Add these Vercel environment variables: `DATABASE_URL`, `DASHBOARD_PASSWORD`,
    `SESSION_SECRET`, and `DEVICE_API_KEY`. Use long random values for the two
    secrets (`node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"` generates a session secret). The dashboard uses a signed,
@@ -61,11 +61,11 @@ remains available for development and continues to use `data/store.json`.
    then configure the ESP32 with the Vercel URL ending in `/api/readings` and
    the matching device key.
 
-The current local JSON store contains sample patient data. To carry it into a
-new, empty database, first run the schema, set `DATABASE_URL` in your local
-shell, run `npm install`, then run `npm run migrate:json`. The importer refuses
-to run if the target database already contains patients or readings. No local
-data is uploaded unless you run this import command.
+To migrate a local `data/store.json` into a new, empty database, first run the
+schema, set `DATABASE_URL` in your local shell, run `npm install`, then run
+`npm run migrate:json`. The importer refuses to run if the target database
+already contains patients or readings. Local patient data is never uploaded by
+Git; migration happens only when you run this command intentionally.
 
 Vercel Hobby includes function use within plan limits, while the database is a
 separate Marketplace resource with its own provider and plan terms. Check the
