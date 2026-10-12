@@ -1,0 +1,19 @@
+# Local runtime data and secrets
+data/store.json
+data/*.tmp
+.env*
+!.env.example
+firmware/esp32_health_monitor/include/secrets.h
+
+# Generated dependencies and build output
+node_modules/
+.vercel/
+firmware/esp32_health_monitor/.pio/
+public/firmware/*.bin
+
+# Local/editor files
+.DS_Store
+.vscode/
+tempCodeRunnerFile.*
+*.exe
+*.o
