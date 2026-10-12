@@ -75,7 +75,12 @@ async function addReading(patientId, reading) {
 }
 
 async function handler(request) {
-  const url = new URL(request.url);
+  // Vercel's Node runtime may provide a relative Request URL (for example,
+  // `/api/session`). Resolve it against the forwarded host so URL parsing
+  // behaves the same locally and in serverless functions.
+  const protocol = request.headers.get('x-forwarded-proto') || (process.env.VERCEL ? 'https' : 'http');
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost';
+  const url = new URL(request.url, `${protocol}://${host}`);
   const parts = url.pathname.split('/').filter(Boolean);
   if (parts[0] !== 'api') return error('unknown API endpoint', 404);
   const method = request.method;
