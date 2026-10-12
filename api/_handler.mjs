@@ -228,11 +228,48 @@ async function handler(request) {
   return error('unknown API endpoint', 404);
 }
 
-export default async function handleRequest(request) {
+async function handleRequest(request) {
   try {
     return await handler(request);
   } catch (cause) {
     console.error('API request failed:', cause);
     return error(cause.status === 400 || cause.status === 413 ? cause.message : 'server error', cause.status || 500);
+  }
+}
+
+// Vercel invokes a default-exported Node.js function with Node request/response
+// objects. Adapt those objects to the Web Request/Response API used above.
+export default async function vercelHandler(request, response) {
+  try {
+    const headers = new Headers();
+    for (const [name, value] of Object.entries(request.headers || {})) {
+      if (value !== undefined) headers.set(name, Array.isArray(value) ? value.join(', ') : String(value));
+    }
+    const protocol = headers.get('x-forwarded-proto') || 'https';
+    const host = headers.get('x-forwarded-host') || headers.get('host') || 'localhost';
+    const url = new URL(request.url || '/', `${protocol}://${host}`);
+    const method = request.method || 'GET';
+    let body;
+    if (method !== 'GET' && method !== 'HEAD') {
+      const chunks = [];
+      for await (const chunk of request) chunks.push(Buffer.from(chunk));
+      body = Buffer.concat(chunks);
+    }
+    const webRequest = new Request(url, {
+      method,
+      headers,
+      ...(body?.length ? { body, duplex: 'half' } : {})
+    });
+    const webResponse = await handleRequest(webRequest);
+    response.statusCode = webResponse.status;
+    webResponse.headers.forEach((value, name) => response.setHeader(name, value));
+    response.end(Buffer.from(await webResponse.arrayBuffer()));
+  } catch (cause) {
+    console.error('Vercel API adapter failed:', cause);
+    if (response.headersSent) return response.end();
+    response.statusCode = 500;
+    response.setHeader('Content-Type', 'application/json; charset=utf-8');
+    response.setHeader('Cache-Control', 'no-store');
+    response.end(JSON.stringify({ error: 'server error' }));
   }
 }
